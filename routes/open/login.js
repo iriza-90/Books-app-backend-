@@ -6,30 +6,25 @@ const bcrypt = require("bcrypt");
 const _ = require('lodash');
 
 route.post('/',async (req, res) => {
-    // const { email, password } = _.pick(req.body, ['email', 'password']);     // Get the username and password from the request body using lodash
+     const { email, password } = _.pick(req.body, ['email', 'password']);     // Get the username and password from the request body using lodash
+
      try {
-          const { error } = validate(req.body);
+          const { error } = validate({ email, password });
           if (error) return res.status(400).send({ message: _.get(error, "details[0].message", "Validation error") });
 
-          const user = await User.findOne({ email: req.body.email });
+          const user = await User.findOne({ email });
           if (!user) return res.status(401).send({ message: "Invalid Email or Password" });
 
-          const validPassword = await bcrypt.compare( req.body.password,user.password);
+          const validPassword = await bcrypt.compare(password, user.password);
           if (!validPassword) return res.status(401).send({ message: "Invalid Email or Password" });
 
-          const token = jwt.sign({ id: user._id },process.env.JWT, { expiresIn: "1h" });
+          const token = jwt.sign({ id: user._id }, process.env.JWT, { expiresIn: "1h" });
           res.status(200).send({ data: token, message: "logged in successfully" });
 
      } catch (error) {
           res.status(500).send({ message: "Internal Server Error" });
      }
-    
 });
-
-
-
-
-
 
 const validate = (data) => {
      const schema = Joi.object({
